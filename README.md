@@ -11,7 +11,7 @@ A standalone music HUD for **Minecraft Forge 1.8.9**, configured with **OneConfi
 3. Start Minecraft. The bundled official OneConfig loader installs OneConfig if needed; allow internet access on first launch.
 4. Play music in an app or browser that exposes a Windows media session.
 
-No Nezur key or installed .NET runtime is needed. This mod only contains MusicIsland, its rendering utilities, and its Windows media bridge. It has no combat modules or custom settings click GUI.
+. This mod only contains MusicIsland, its rendering utilities, and its Windows media bridge.
 
 ## Settings and controls
 
