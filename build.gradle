@@ -1,0 +1,61 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url 'https://maven.minecraftforge.net' }
+    }
+    dependencies { classpath 'net.minecraftforge.gradle:ForgeGradle:2.1-SNAPSHOT' }
+}
+apply plugin: 'net.minecraftforge.gradle.forge'
+
+version = '1.0.0'
+group = 'io.github.pitmod'
+archivesBaseName = 'MusicIsland'
+sourceCompatibility = targetCompatibility = '1.8'
+compileJava.options.encoding = 'UTF-8'
+minecraft {
+    version = '1.8.9-11.15.1.2318-1.8.9'
+    mappings = 'stable_22'
+    runDir = 'run'
+}
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.polyfrost.org/releases' }
+}
+configurations { embed }
+dependencies {
+    compileOnly('cc.polyfrost:oneconfig-1.8.9-forge:0.2.2-alpha228') { transitive = false }
+    compileOnly('cc.polyfrost:universalcraft-1.8.9-forge:246') { transitive = false }
+    embed('cc.polyfrost:oneconfig-wrapper-launchwrapper:1.0.0-beta17') { transitive = false }
+}
+task buildMusicIslandHelper(type: Exec) {
+    inputs.files(fileTree('music-island-helper') { include '*.cs', '*.csproj' })
+    outputs.file "$buildDir/music-island-helper/MusicSessionBridge.exe"
+    commandLine 'dotnet', 'publish', 'music-island-helper/MusicSessionBridge.csproj',
+            '-c', 'Release', '-r', 'win-x64', '-o', "$buildDir/music-island-helper"
+}
+processResources {
+    dependsOn buildMusicIslandHelper
+    inputs.property 'version', project.version
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+        expand version: project.version
+    }
+    from(sourceSets.main.resources.srcDirs) { exclude 'mcmod.info' }
+    from("$buildDir/music-island-helper") {
+        include 'MusicSessionBridge.exe'
+        into 'assets/musicisland/music'
+    }
+    from('licenses') { into 'META-INF/licenses' }
+    from('THIRD_PARTY_NOTICES.md') { into 'META-INF' }
+}
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from { configurations.embed.collect { zipTree(it) } }
+    exclude 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA'
+    manifest.attributes(
+            'ModSide': 'CLIENT',
+            'ForceLoadAsMod': 'true',
+            'TweakOrder': '0',
+            'TweakClass': 'cc.polyfrost.oneconfig.loader.stage0.LaunchWrapperTweaker'
+    )
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "modid": "musicisland",
+    "name": "MusicIsland",
+    "description": "Animated music HUD with Windows media controls and OneConfig settings.",
+    "version": "${version}",
+    "mcversion": "1.8.9",
+    "url": "https://github.com/pit-mod/MusicIsland",
+    "authorList": ["pit-mod"],
+    "clientSideOnly": true
+  }
+]

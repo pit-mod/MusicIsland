@@ -1,0 +1,12 @@
+.gradle/
+build/
+run/
+bin/
+obj/
+**/bin/
+**/obj/
+.idea/
+.vscode/
+*.iml
+*.log
+local.properties
