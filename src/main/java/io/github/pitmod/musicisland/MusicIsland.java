@@ -24,7 +24,7 @@ public final class MusicIsland {
     private int lastPointerX,lastPointerY;
     private boolean heldExpanded;
     public MusicIsland(MusicIslandConfig config){this.config=config;}
-    public boolean isToggled(){return config.enabled;}
+    public boolean isToggled(){return config.enabled&&(config.showInMenus||(mc.theWorld!=null&&mc.thePlayer!=null));}
     public boolean isInteractionKey(int code){return config.interact.getKeyBinds().size()==1&&config.interact.getKeyBinds().contains(code);}
     public void restartPreview(){previewPlayer.reset();previewStart=System.nanoTime();config.preview=true;config.save();}
     @SubscribeEvent public void tick(net.minecraftforge.fml.common.gameevent.TickEvent.ClientTickEvent e){
@@ -62,7 +62,7 @@ public final class MusicIsland {
         top=Math.max(4,Math.min(config.offset,sh-MusicLayout.HEIGHT*actualScale-6));
         if(mc.currentScreen!=null&&!(mc.currentScreen instanceof MusicInteractionScreen)) {cx=sw*.5f;top=Math.max(4,sh-MusicLayout.HEIGHT*actualScale-28);}
     }
-    public boolean hit(int x,int y){return presentation.visibility.getCurrentValue()>.1&&Math.abs(x-cx)<=presentation.width.getCurrentValue()*actualScale*.5f&&y>=top&&y<=top+presentation.height.getCurrentValue()*actualScale;}
+    public boolean hit(int x,int y){return isToggled()&&presentation.visibility.getCurrentValue()>.1&&Math.abs(x-cx)<=presentation.width.getCurrentValue()*actualScale*.5f&&y>=top&&y<=top+presentation.height.getCurrentValue()*actualScale;}
     public boolean press(int x,int y,int button){if(button!=0||!hit(x,y))return false;pointerScreen=mc.currentScreen;lastPointerX=x;lastPointerY=y;
         MediaSnapshot s=displayed; if(s==null){presentation.expand(System.nanoTime());return true;}
         float px=(x-cx)/actualScale+81,py=(y-top)/actualScale;

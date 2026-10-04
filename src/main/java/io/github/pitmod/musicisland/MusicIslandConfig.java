@@ -9,6 +9,8 @@ import net.minecraft.client.Minecraft;
 import org.lwjgl.input.Keyboard;
 
 public final class MusicIslandConfig extends Config {
+    @Switch(name="Show in Minecraft menus", description="Allow the island outside a loaded game, including the title screen and server browser.", category="Appearance")
+    public boolean showInMenus=false;
     @Slider(name="Scale", min=0.6f, max=2.5f, category="Appearance")
     public float scale=1;
     @Slider(name="Top offset", min=0, max=200, step=1, category="Appearance")
@@ -50,7 +52,7 @@ public final class MusicIslandConfig extends Config {
     public String motionName(){return new String[]{"Fluid","Reduced","Off"}[Math.max(0,Math.min(2,motion))];}
     public String sourceName(){return new String[]{"Playing","Spotify","Current"}[Math.max(0,Math.min(2,source))];}
     private void resetDefaults(){
-        scale=1;offset=8;horizontalOffset=0;compactTitle=true;indicator=true;motion=0;source=0;
+        scale=1;offset=8;horizontalOffset=0;compactTitle=true;indicator=true;motion=0;source=0;showInMenus=false;
         announcement=2;collapse=0;paused=15;arrows=true;preview=false;
         interact.clearKeys();interact.addKey(Keyboard.KEY_M);save();
     }
