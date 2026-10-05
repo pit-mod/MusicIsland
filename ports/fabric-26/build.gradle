@@ -1,5 +1,5 @@
 plugins { id 'net.fabricmc.fabric-loom' version '1.15.5' }
-version = '1.1.0'
+version = '1.1.1'
 group = 'io.github.pitmod'
 base.archivesName = 'MusicIsland-fabric-26.1-26.3'
 def original = file('../..')
@@ -28,6 +28,7 @@ tasks.register('buildMusicIslandHelper', Exec) {
     commandLine 'dotnet','publish','music-island-helper/MusicSessionBridge.csproj','-c','Release','-r','win-x64','-o','build/music-island-helper'
 }
 processResources {
+    inputs.property 'modVersion', project.version
     dependsOn 'buildMusicIslandHelper'
     filesMatching('fabric.mod.json') { expand version: project.version }
     from(new File(original,'src/main/resources/assets/musicisland/logo.png')) { into 'assets/musicisland' }

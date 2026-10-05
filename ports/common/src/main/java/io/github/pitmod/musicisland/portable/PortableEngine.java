@@ -28,6 +28,9 @@ public final class PortableEngine implements AutoCloseable {
     public void cancelGesture() { gesture.cancel(); heldExpanded = false; }
     public void restartPreview() { preview.reset(); previewStart = System.nanoTime(); config.preview = true; config.save(); }
     public BufferedImage draw(int width, int height, boolean menu) {
+        return draw(width,height,menu,1);
+    }
+    public BufferedImage draw(int width, int height, boolean menu, double displayScale) {
         if (!active) return null;
         long now = System.nanoTime();
         provider.preference(config.sourceName());
@@ -43,6 +46,7 @@ public final class PortableEngine implements AutoCloseable {
         double elapsed=gesture.elapsed(displayed,now,provider.pending(),provider.error());
         String status=config.preview?"Preview · controls are simulated":provider.error();
         if(latest==null&&status.isEmpty())status="Start playback in a media app";
+        canvas.pixelScale(displayScale*scale);
         return canvas.draw(presentation,displayed,elapsed,now,config.preview?MusicAudio.SILENT:provider.audio(),config,status,gesture.pressedControl());
     }
     public boolean hit(double x,double y) {

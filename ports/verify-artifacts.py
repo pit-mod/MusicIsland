@@ -3,12 +3,14 @@ from pathlib import Path
 import hashlib, json, sys, zipfile
 
 root=Path(__file__).resolve().parents[1]
-folder=Path(sys.argv[1]) if len(sys.argv)>1 else root/'build/releases/1.1.0'
+folder=Path(sys.argv[1]) if len(sys.argv)>1 else root/'build/releases/1.1.1'
+fabric_version=sys.argv[2] if len(sys.argv)>2 else '1.1.1'
+forge_version='1.1.0'
 targets=json.loads((root/'ports/fabric/targets.json').read_text())
 forge=['1.8.9','1.9.4','1.10.2','1.11.2','1.12.2','1.13.2']
 expected={f'MusicIsland-forge-{v}-1.1.0.jar' for v in forge}
-expected.update(f'MusicIsland-fabric-{v}-1.1.0.jar' for v in targets)
-expected.add('MusicIsland-fabric-26.1-26.3-1.1.0.jar')
+expected.update(f'MusicIsland-fabric-{v}-{fabric_version}.jar' for v in targets)
+expected.add(f'MusicIsland-fabric-26.1-26.3-{fabric_version}.jar')
 actual={p.name for p in folder.glob('*.jar')}
 if expected!=actual:raise SystemExit(f'Release set mismatch: missing {expected-actual}; unexpected {actual-expected}')
 helper=(root/'build/music-island-helper/MusicSessionBridge.exe').read_bytes()
@@ -24,11 +26,11 @@ for name in sorted(expected):
         assert not any('/smoke/' in entry or entry=='musicisland-smoke-pass.txt' for entry in jar.namelist()),name+' test mod leaked'
         if 'fabric.mod.json' in jar.namelist():
             metadata=json.loads(jar.read('fabric.mod.json'))
-            assert metadata['environment']=='client' and metadata['version']=='1.1.0'
+            assert metadata['environment']=='client' and metadata['version']==fabric_version
             if '26.1-26.3' in name:
                 assert metadata['depends']['minecraft']==['26.1','26.1.1','26.1.2','26.2','26.3']
             else:
-                mc=name[len('MusicIsland-fabric-'):-len('-1.1.0.jar')]
+                mc=name[len('MusicIsland-fabric-'):-len(f'-{fabric_version}.jar')]
                 assert metadata['depends']['minecraft']==mc
                 assert targets[mc]['apiId'] in metadata['depends']
             for mixin in metadata.get('mixins',[]):

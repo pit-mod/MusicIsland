@@ -47,6 +47,17 @@ public final class CompatibilityChecks {
         int colored=0;for(int y=0;y<frame.getHeight();y++)for(int x=0;x<frame.getWidth();x++)if((frame.getRGB(x,y)&0xFFFFFF)!=0)colored++;
         require(colored>2000,"Artwork, controls and text must actually draw");
         Path output=Paths.get(args[0]);Files.createDirectories(output);ImageIO.write(frame,"png",output.resolve("expanded.png").toFile());
+        canvas.pixelScale(5);frame=canvas.draw(model,first,100,now+3_016_666_667L,MusicAudio.SILENT,settings,"",0);
+        require(frame.getWidth()>=PortableCanvas.WIDTH*5,"High GUI scale must not stretch a low-resolution texture");
+        ImageIO.write(frame,"png",output.resolve("expanded-high-density.png").toFile());
+        java.lang.reflect.Method text=PortableCanvas.class.getDeclaredMethod("text",java.awt.Graphics2D.class,String.class,float.class,float.class,float.class,java.awt.Color.class);
+        java.lang.reflect.Method label=PortableCanvas.class.getDeclaredMethod("label",java.awt.Graphics2D.class,String.class,float.class,float.class,float.class,float.class,java.awt.Color.class,long.class,MusicMarquee.class,boolean.class);
+        text.setAccessible(true);label.setAccessible(true);
+        BufferedImage reference=new BufferedImage(800,100,BufferedImage.TYPE_INT_ARGB),clipped=new BufferedImage(800,100,BufferedImage.TYPE_INT_ARGB);
+        java.awt.Graphics2D rg=reference.createGraphics(),cg=clipped.createGraphics();
+        try{rg.scale(4,4);cg.scale(4,4);text.invoke(null,rg,"Everything I Am · Kanye West gyp",2f,2f,.84f,java.awt.Color.WHITE);label.invoke(null,cg,"Everything I Am · Kanye West gyp",2f,2f,190f,.84f,java.awt.Color.WHITE,now,null,false);}finally{rg.dispose();cg.dispose();}
+        require(java.util.Arrays.equals(reference.getRGB(0,0,800,100,null,0,800),clipped.getRGB(0,0,800,100,null,0,800)),"Title/artist clipping must preserve entire glyphs including descenders");
+        canvas.pixelScale(1);
         model.dismiss();model.update(first,now+4_000_000_000L,2,0,15,"Off",false,false,false);
         ImageIO.write(canvas.draw(model,first,100,now+4_000_000_000L,MusicAudio.SILENT,settings,"",0),"png",output.resolve("compact.png").toFile());
         settings.file=output.resolve("settings.json");settings.scale=Float.NaN;settings.motion=99;settings.save();

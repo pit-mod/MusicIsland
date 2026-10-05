@@ -1,4 +1,16 @@
-# MusicIsland 1.1.0 validation
+# MusicIsland validation
+
+## 1.1.1 Fabric patch
+
+Checked on 2026-10-05. All 11 Fabric artifacts rebuilt; Forge release artifacts remain the original 1.1.0 files. The shared renderer now uses linear GPU sampling, display-scale supersampling, antialiased artwork masks and the original renderer's font metrics with complete vertical glyph bounds.
+
+Focused regressions compare clipped labels against unclipped glyph output (including `g`, `y` and `p`) and verify the high-density surface dimensions. Actual isolated clients on 1.14.4, 1.21.11, 26.1.2 and 26.3 exercise native screen mouse events for pause, previous, next and seeking, reject non-left clicks, and preserve a gesture across consecutive ticks. Settings, collapse and menu hiding are also checked. These tests use simulated preview playback, not a live external player's response.
+
+Expanded 26.3 output was captured through Minecraft's screenshot API and inspected for text, artwork and rounded-edge quality at a large configured scale. The shared 26.x adapter compiled against each of the five 26.x versions still produces identical class hashes; input constants and GPU sampler types are resolved at runtime to accommodate the SDL/RenderPearl changes in 26.3. Runtime checks use OpenGL; Vulkan has not been separately exercised.
+
+One 26.3 development launch exited with a native access violation during Minecraft resource loading before the island was drawn. A fresh launch completed all checks. The earlier incomplete screenshot-check attempt used an outdated screenshot accessor; that auxiliary test was corrected. Neither auxiliary test code nor its screenshot helper enters release jars.
+
+## 1.1.0 multi-version beta
 
 Checked on 2026-10-05, Windows 11 x64 with an NVIDIA RTX 3060. This is a multi-version **beta**: automated checks establish specific behavior, not a guarantee for every music application, modpack or graphics driver.
 

@@ -20,6 +20,7 @@ import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -78,7 +79,7 @@ public final class MusicIslandClient implements ClientModInitializer {
     private static LiteralArgumentBuilder<FabricClientCommandSource> literal(String name){return LiteralArgumentBuilder.literal(name);}
     private void initializeScreenAccess(){}
     private Screen currentScreen(){return mc.currentScreen;}
-    private void setScreen(Screen s){mc.setScreen(s);}
+    private void setScreen(Screen s){engine.cancelGesture();mc.setScreen(s);priorScreen=currentScreen();lastUpload=0;}
     private void showControls(){if(engine.active()){engine.expand();setScreen(new IslandScreen(currentScreen()));}}
     private void toggleControls(){if(engine.presentation.explicit)engine.dismiss();else showControls();}
     private void showSettings(){setScreen(new SettingsScreen(currentScreen()));}
@@ -86,19 +87,22 @@ public final class MusicIslandClient implements ClientModInitializer {
     private void draw(DrawContext graphics,boolean menu){
         if(!engine.active())return;
         long now=System.nanoTime();
-        if(texture==null){pixels=new NativeImage(PortableCanvas.WIDTH*PortableCanvas.DENSITY,PortableCanvas.HEIGHT*PortableCanvas.DENSITY,false);
-            texture=new NativeImageBackedTexture(pixels);mc.getTextureManager().registerTexture(TEXTURE,texture);}
-        if(now-lastUpload>=16000000L){
-            BufferedImage image=engine.draw(graphics.getScaledWindowWidth(),graphics.getScaledWindowHeight(),menu);if(image==null)return;
-            int[] data=image.getRGB(0,0,image.getWidth(),image.getHeight(),null,0,image.getWidth());
+        if(texture==null||now-lastUpload>=16000000L){
+            BufferedImage image=engine.draw(graphics.getScaledWindowWidth(),graphics.getScaledWindowHeight(),menu,(double)mc.getWindow().getFramebufferWidth()/graphics.getScaledWindowWidth());if(image==null)return;
+            if(pixels==null||pixels.getWidth()!=image.getWidth()||pixels.getHeight()!=image.getHeight()){
+                if(texture!=null)releaseTexture();
+                pixels=new NativeImage(image.getWidth(),image.getHeight(),false);
+                texture=new NativeImageBackedTexture(pixels);mc.getTextureManager().registerTexture(TEXTURE,texture);
+            }
+            int[] data=((DataBufferInt)image.getRaster().getDataBuffer()).getData();
             for(int y=0;y<image.getHeight();y++)for(int x=0;x<image.getWidth();x++)pixels.setColor(x,y,toABGR(data[y*image.getWidth()+x]));
-            texture.upload();lastUpload=now;
+            texture.upload();texture.setFilter(true,false);lastUpload=now;
         }
         graphics.getMatrices().push();
         try{
             graphics.getMatrices().translate(engine.center-PortableCanvas.WIDTH*engine.scale*.5f,engine.top-12*engine.scale,0);
             graphics.getMatrices().scale(engine.scale,engine.scale,1);
-            graphics.drawTexture(TEXTURE,0,0,PortableCanvas.WIDTH,PortableCanvas.HEIGHT,0,0,PortableCanvas.WIDTH*PortableCanvas.DENSITY,PortableCanvas.HEIGHT*PortableCanvas.DENSITY,PortableCanvas.WIDTH*PortableCanvas.DENSITY,PortableCanvas.HEIGHT*PortableCanvas.DENSITY);
+            graphics.drawTexture(TEXTURE,0,0,PortableCanvas.WIDTH,PortableCanvas.HEIGHT,0,0,pixels.getWidth(),pixels.getHeight(),pixels.getWidth(),pixels.getHeight());
         }finally{graphics.getMatrices().pop();}
     }
     private static int toABGR(int argb){return (argb&0xFF00FF00)|((argb>>>16)&255)|((argb&255)<<16);}

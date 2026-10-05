@@ -22,6 +22,7 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -41,10 +42,13 @@ public final class MusicIslandClient implements ClientModInitializer {
     private Method screenGetter,screenSetter;
     private Object guiOwner;
     private long lastUpload;
+    private int leftButton;
 
     @Override public void onInitializeClient() {
         engine=new PortableEngine(PortableSettings.load(FabricLoader.getInstance().getConfigDir().resolve("musicisland.json")));
         initializeScreenAccess();
+        try{leftButton=InputConstants.class.getField("MOUSE_BUTTON_LEFT").getInt(null);}
+        catch(ReflectiveOperationException e){throw new IllegalStateException("Unsupported mouse API",e);}
         KeyMapping.Category category=KeyMapping.Category.register(Identifier.fromNamespaceAndPath("musicisland","controls"));
         controls=key("controls","KEY_M",category);settings=key("settings","KEY_F8",category);
         down=key("expand","KEY_DOWN",category);up=key("play_pause","KEY_UP",category);
@@ -67,9 +71,9 @@ public final class MusicIslandClient implements ClientModInitializer {
         ScreenEvents.AFTER_INIT.register((client,screen,w,h)->{
             if(screen instanceof IslandScreen||screen instanceof SettingsScreen)return;
             ScreenEvents.afterExtract(screen).register((s,g,x,y,delta)->draw(g,true));
-            ScreenMouseEvents.allowMouseClick(screen).register((s,e)->!engine.press(e.x(),e.y(),e.button()));
+            ScreenMouseEvents.allowMouseClick(screen).register((s,e)->!engine.press(e.x(),e.y(),button(e.button())));
             ScreenMouseEvents.allowMouseRelease(screen).register((s,e)->{
-                if(!engine.ownsPointer())return true;engine.release(e.x(),e.y(),e.button());return false;
+                if(!engine.ownsPointer())return true;engine.release(e.x(),e.y(),button(e.button()));return false;
             });
             ScreenMouseEvents.allowMouseDrag(screen).register((s,e,dx,dy)->{
                 if(!engine.ownsPointer())return true;engine.drag(e.x(),e.y());return false;
@@ -96,7 +100,8 @@ public final class MusicIslandClient implements ClientModInitializer {
         try{Object owner=guiField==null?guiOwner:guiField.get(mc);return owner==null?null:(Screen)(screenField!=null?screenField.get(mc):screenGetter.invoke(owner));}
         catch(ReflectiveOperationException e){throw new IllegalStateException(e);}
     }
-    private void setScreen(Screen s){try{screenSetter.invoke(guiField==null?guiOwner:guiField.get(mc),s);}catch(ReflectiveOperationException e){throw new IllegalStateException(e);}}
+    private int button(int nativeButton){return nativeButton==leftButton?0:1;}
+    private void setScreen(Screen s){try{engine.cancelGesture();screenSetter.invoke(guiField==null?guiOwner:guiField.get(mc),s);priorScreen=currentScreen();lastUpload=0;}catch(ReflectiveOperationException e){throw new IllegalStateException(e);}}
     private void showControls(){if(engine.active()){engine.expand();setScreen(new IslandScreen(currentScreen()));}}
     private void toggleControls(){if(engine.presentation.explicit)engine.dismiss();else showControls();}
     private void showSettings(){setScreen(new SettingsScreen(currentScreen()));}
@@ -104,11 +109,14 @@ public final class MusicIslandClient implements ClientModInitializer {
     private void draw(GuiGraphicsExtractor graphics,boolean menu){
         if(!engine.active())return;
         long now=System.nanoTime();
-        if(texture==null){pixels=new NativeImage(PortableCanvas.WIDTH*PortableCanvas.DENSITY,PortableCanvas.HEIGHT*PortableCanvas.DENSITY,false);
-            texture=new DynamicTexture(()->"MusicIsland HUD",pixels);mc.getTextureManager().register(TEXTURE,texture);}
-        if(now-lastUpload>=16000000L){
-            BufferedImage image=engine.draw(graphics.guiWidth(),graphics.guiHeight(),menu);if(image==null)return;
-            int[] data=image.getRGB(0,0,image.getWidth(),image.getHeight(),null,0,image.getWidth());
+        if(texture==null||now-lastUpload>=16000000L){
+            BufferedImage image=engine.draw(graphics.guiWidth(),graphics.guiHeight(),menu,(double)mc.getWindow().getWidth()/graphics.guiWidth());if(image==null)return;
+            if(pixels==null||pixels.getWidth()!=image.getWidth()||pixels.getHeight()!=image.getHeight()){
+                if(texture!=null)releaseTexture();
+                pixels=new NativeImage(image.getWidth(),image.getHeight(),false);
+                texture=new DynamicTexture(()->"MusicIsland HUD",pixels);HudSampling.linear(texture);mc.getTextureManager().register(TEXTURE,texture);
+            }
+            int[] data=((DataBufferInt)image.getRaster().getDataBuffer()).getData();
             for(int y=0;y<image.getHeight();y++)for(int x=0;x<image.getWidth();x++)pixels.setPixel(x,y,data[y*image.getWidth()+x]);
             texture.upload();lastUpload=now;
         }
@@ -127,9 +135,9 @@ public final class MusicIslandClient implements ClientModInitializer {
             draw(g,false);g.centeredText(font,"M / Escape to close · F8 settings · arrow keys control playback",width/2,height-20,0xFFB8B8C2);
         }
         @Override public boolean mouseClicked(MouseButtonEvent e,boolean twice){
-            if(engine.press(e.x(),e.y(),e.button()))return true;if(e.button()==0)onClose();return true;
+            if(engine.press(e.x(),e.y(),button(e.button())))return true;if(e.button()==leftButton)onClose();return true;
         }
-        @Override public boolean mouseReleased(MouseButtonEvent e){engine.release(e.x(),e.y(),e.button());return true;}
+        @Override public boolean mouseReleased(MouseButtonEvent e){engine.release(e.x(),e.y(),button(e.button()));return true;}
         @Override public boolean mouseDragged(MouseButtonEvent e,double dx,double dy){engine.drag(e.x(),e.y());return true;}
         @Override public boolean keyPressed(KeyEvent e){
             if(controls.matches(e)||down.matches(e)&&engine.config.arrows){onClose();return true;}

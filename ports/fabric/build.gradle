@@ -1,5 +1,5 @@
 plugins { id 'fabric-loom' version '1.14.10' }
-version = '1.1.0'
+version = '1.1.1'
 group = 'io.github.pitmod'
 def mc = project.findProperty('mc') ?: '1.20.1'
 def target = new groovy.json.JsonSlurper().parse(file('targets.json'))[mc]
@@ -42,6 +42,7 @@ tasks.register('buildMusicIslandHelper', Exec) {
     commandLine 'dotnet','publish','music-island-helper/MusicSessionBridge.csproj','-c','Release','-r','win-x64','-o','build/music-island-helper'
 }
 processResources {
+    inputs.property 'modVersion', project.version
     dependsOn 'buildMusicIslandHelper','prepareAdapterSource'
     inputs.properties version:project.version,mc:mc,java:target.java,apiId:target.apiId
     filesMatching('fabric.mod.json') {

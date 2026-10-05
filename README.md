@@ -2,7 +2,7 @@
 
 A standalone music HUD for Minecraft, with Forge builds for older versions and Fabric builds for newer versions. Includes album artwork, Unicode titles, an artwork-colored audio visualizer, smooth compact/expanded transitions, and immediate animated playback controls.
 
-[Download the multi-version beta](https://github.com/pit-mod/MusicIsland/releases/tag/v1.1.0)
+[Download the multi-version beta](https://github.com/pit-mod/MusicIsland/releases/tag/v1.1.1)
 
 ## Install
 

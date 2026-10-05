@@ -4,13 +4,25 @@ import io.github.pitmod.musicisland.music.*;
 import java.awt.*;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
+import java.awt.font.FontRenderContext;
+import java.awt.font.TextLayout;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 
 /** Produces an RGBA HUD surface; the loader uploads it through Minecraft's own texture API.
  * No OpenGL calls, game-state cache mutations, or assumption about an OpenGL/Vulkan backend. */
 public final class PortableCanvas {
     public static final int WIDTH=210,HEIGHT=120,DENSITY=4;
-    private final BufferedImage image=new BufferedImage(WIDTH*DENSITY,HEIGHT*DENSITY,BufferedImage.TYPE_INT_ARGB);
+    private BufferedImage image=new BufferedImage(WIDTH*DENSITY,HEIGHT*DENSITY,BufferedImage.TYPE_INT_ARGB);
+    private int density=DENSITY;
+    private static final Font FONT=new Font(Font.DIALOG,Font.PLAIN,36);
+    private static final FontRenderContext METRICS=new FontRenderContext(null,true,true);
+    private static final LinkedHashMap<String,TextLayout> LABELS=new LinkedHashMap<String,TextLayout>(64,.75f,true);
+    /** Keep small text and curves supersampled at the actual display/GUI scale. */
+    public void pixelScale(double scale){
+        int next=Math.max(DENSITY,Math.min(12,((int)Math.ceil(scale*1.5)+1)/2*2));
+        if(next!=density){density=next;image=new BufferedImage(WIDTH*density,HEIGHT*density,BufferedImage.TYPE_INT_ARGB);}
+    }
     private final MusicMarquee titleScroll=new MusicMarquee(),artistScroll=new MusicMarquee();
     private final MusicWaveform waveform=new MusicWaveform();
     private String identity="",artHash="";
@@ -21,7 +33,7 @@ public final class PortableCanvas {
         Graphics2D g=image.createGraphics();
         try{
             g.setComposite(AlphaComposite.Clear);g.fillRect(0,0,image.getWidth(),image.getHeight());
-            g.setComposite(AlphaComposite.SrcOver);g.scale(DENSITY,DENSITY);
+            g.setComposite(AlphaComposite.SrcOver);g.scale(density,density);
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
             g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,RenderingHints.VALUE_FRACTIONALMETRICS_ON);
@@ -69,7 +81,7 @@ public final class PortableCanvas {
             if(s!=null&&s.duration>0&&fraction>0)round(g,lineX,lineY,lineW*fraction,thickness,thickness*.5f,color(0xFFFFFF,alpha));
             text(g,time(elapsed),x+12,y+MusicLayout.SEEK_Y+shift-3,.56f,color(0x96969C,alpha));
             String remaining=s==null||s.duration<=0?"--:--":"-"+time(Math.max(0,s.duration-elapsed));
-            float textWidth=g.getFontMetrics(font(.56f)).stringWidth(remaining);
+            float textWidth=layout(remaining).getAdvance()*.56f/4;
             text(g,remaining,x+w-11-textWidth,y+MusicLayout.SEEK_Y+shift-3,.56f,color(0x96969C,alpha));
             float mid=x+w*.5f,cy=y+MusicLayout.CONTROL_Y+shift;
             skip(g,mid-MusicLayout.CONTROL_SPACING,cy,false,s!=null&&s.previous,alpha,m.controls.previous.getCurrentValue(),m.controls.direction<0?m.controls.skipPhase(now):1);
@@ -84,24 +96,44 @@ public final class PortableCanvas {
         float blend=MusicPresentation.smooth((now-artChangedAt)/440000000f);
         for(int i=0;i<colors.length;i++)priorColors[i]=ArtworkAccent.blend(priorColors[i],colors[i],blend);
         colors=ArtworkAccent.columns(s==null?null:s.artwork,MusicWaveform.BARS*2);
-        previousArtwork=artwork;artwork=s==null?null:s.artwork;artChangedAt=now;artHash=hash;
+        previousArtwork=artwork;artwork=roundedArtwork(s==null?null:s.artwork);artChangedAt=now;artHash=hash;
+    }
+    private static BufferedImage roundedArtwork(BufferedImage art){
+        if(art==null)return null;
+        int crop=Math.min(art.getWidth(),art.getHeight()),edge=Math.min(512,crop);
+        BufferedImage result=new BufferedImage(edge,edge,BufferedImage.TYPE_INT_ARGB),mask=new BufferedImage(edge,edge,BufferedImage.TYPE_INT_ARGB);
+        Graphics2D mg=mask.createGraphics();try{mg.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);mg.setColor(Color.WHITE);mg.fill(new RoundRectangle2D.Float(0,0,edge,edge,edge*.4f,edge*.4f));}finally{mg.dispose();}
+        Graphics2D g=result.createGraphics();try{
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            int sx=(art.getWidth()-crop)/2,sy=(art.getHeight()-crop)/2;
+            g.drawImage(art,0,0,edge,edge,sx,sy,sx+crop,sy+crop,null);
+            g.setComposite(AlphaComposite.DstIn);g.drawImage(mask,0,0,null);
+        }finally{g.dispose();}return result;
     }
     private static void cover(Graphics2D g,BufferedImage art,float x,float y,float size,float scale,float opacity){
         if(opacity<=.001f)return;Graphics2D child=(Graphics2D)g.create();
         try{
             child.translate(x+size*.5f,y+size*.5f);child.scale(scale,scale);child.translate(-size*.5f,-size*.5f);
-            child.clip(new RoundRectangle2D.Float(0,0,size,size,size*.4f,size*.4f));child.setComposite(AlphaComposite.SrcOver.derive(clamp(opacity)));
-            if(art==null){child.setColor(new Color(0x222226));child.fill(new Rectangle2D.Float(0,0,size,size));child.setColor(new Color(0xA0A0A8));child.setStroke(new BasicStroke(Math.max(.6f,size*.055f)));child.draw(new Line2D.Float(size*.62f,size*.22f,size*.62f,size*.68f));child.fill(new Ellipse2D.Float(size*.35f,size*.56f,size*.28f,size*.28f));}
-            else{int crop=Math.min(art.getWidth(),art.getHeight()),sx=(art.getWidth()-crop)/2,sy=(art.getHeight()-crop)/2;child.drawImage(art.getSubimage(sx,sy,crop,crop),AffineTransform.getScaleInstance(size/crop,size/crop),null);}
+            child.setComposite(AlphaComposite.SrcOver.derive(clamp(opacity)));
+            if(art==null){child.setColor(new Color(0x222226));child.fill(new RoundRectangle2D.Float(0,0,size,size,size*.4f,size*.4f));child.setColor(new Color(0xA0A0A8));child.setStroke(new BasicStroke(Math.max(.6f,size*.055f)));child.draw(new Line2D.Float(size*.62f,size*.22f,size*.62f,size*.68f));child.fill(new Ellipse2D.Float(size*.35f,size*.56f,size*.28f,size*.28f));}
+            else child.drawImage(art,AffineTransform.getScaleInstance(size/art.getWidth(),size/art.getHeight()),null);
         }finally{child.dispose();}
     }
-    private static Font font(float scale){return new Font(Font.DIALOG,Font.PLAIN,36).deriveFont(9*scale);}
-    private static void text(Graphics2D g,String text,float x,float y,float scale,Color color){g.setFont(font(scale));g.setColor(color);g.drawString(clean(text),x,y+g.getFontMetrics().getAscent());}
+    private static TextLayout layout(String value){
+        String text=clean(value);TextLayout result=LABELS.get(text);
+        if(result==null){result=new TextLayout(text,FONT,METRICS);LABELS.put(text,result);if(LABELS.size()>64)LABELS.remove(LABELS.keySet().iterator().next());}return result;
+    }
+    private static void text(Graphics2D g,String value,float x,float y,float scale,Color color){
+        TextLayout text=layout(value);Graphics2D child=(Graphics2D)g.create();
+        try{child.translate(x,y);child.scale(scale/4,scale/4);child.setColor(color);text.draw(child,2,2+text.getAscent());}finally{child.dispose();}
+    }
     private static void label(Graphics2D g,String value,float x,float y,float width,float scale,Color color,long now,MusicMarquee scroll,boolean resizing){
         if(width<=0||color.getAlpha()<1)return;String valueClean=clean(value);Graphics2D child=(Graphics2D)g.create();
-        try{child.setFont(font(scale));float textWidth=child.getFontMetrics().stringWidth(valueClean),available=width/scale;
+        try{TextLayout text=layout(valueClean);float textWidth=text.getAdvance()*scale/4,available=width/scale;
             float offset=scroll==null?0:scroll.update(valueClean,textWidth/scale,available,resizing,now)*scale;
-            child.clip(new Rectangle2D.Float(x,y-.5f,width,10*scale));text(child,valueClean,x-offset,y,scale,color);
+            // Match the original renderer's generous vertical scissor; only overflow
+            // in the scrolling direction should be clipped, never glyph descenders.
+            child.clip(new Rectangle2D.Float(x,y-.5f,width,Math.max(12,(text.getAscent()+text.getDescent()+text.getLeading()+4)*scale/4+1)));text(child,valueClean,x-offset,y,scale,color);
             if(offset>0)text(child,valueClean,x-offset+textWidth+MusicMarquee.GAP*scale,y,scale,color);
         }finally{child.dispose();}
     }

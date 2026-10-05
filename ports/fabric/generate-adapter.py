@@ -15,9 +15,15 @@ if minor == 21 and patch >= 6:
     source = source.replace('graphics.getMatrices().push()', 'graphics.getMatrices().pushMatrix()').replace('graphics.getMatrices().pop()', 'graphics.getMatrices().popMatrix()')
     source = source.replace('graphics.getMatrices().translate(engine.center-PortableCanvas.WIDTH*engine.scale*.5f,engine.top-12*engine.scale,0)', 'graphics.getMatrices().translate(engine.center-PortableCanvas.WIDTH*engine.scale*.5f,engine.top-12*engine.scale)')
     source = source.replace('graphics.getMatrices().scale(engine.scale,engine.scale,1)', 'graphics.getMatrices().scale(engine.scale,engine.scale)')
-    old = 'graphics.drawTexture(TEXTURE,0,0,PortableCanvas.WIDTH,PortableCanvas.HEIGHT,0,0,PortableCanvas.WIDTH*PortableCanvas.DENSITY,PortableCanvas.HEIGHT*PortableCanvas.DENSITY,PortableCanvas.WIDTH*PortableCanvas.DENSITY,PortableCanvas.HEIGHT*PortableCanvas.DENSITY)'
+    old = 'graphics.drawTexture(TEXTURE,0,0,PortableCanvas.WIDTH,PortableCanvas.HEIGHT,0,0,pixels.getWidth(),pixels.getHeight(),pixels.getWidth(),pixels.getHeight())'
     source = source.replace(old, 'graphics.drawTexturedQuad(TEXTURE,0,0,PortableCanvas.WIDTH,PortableCanvas.HEIGHT,0,1,0,1)')
 if minor == 21 and patch >= 9:
+    source = source.replace('new NativeImageBackedTexture(()->"MusicIsland HUD",pixels)', 'new SmoothTexture(pixels)')
+    source = source.replace('texture.setFilter(true,false);', '')
+    source = source.replace('    private static int toABGR', '''    private static final class SmoothTexture extends NativeImageBackedTexture {
+        SmoothTexture(NativeImage image){super(()->"MusicIsland HUD",image);sampler=com.mojang.blaze3d.systems.RenderSystem.getSamplerCache().get(com.mojang.blaze3d.textures.FilterMode.LINEAR);}
+    }
+    private static int toABGR''')
     source = source.replace('import org.lwjgl.glfw.GLFW;', 'import org.lwjgl.glfw.GLFW;\nimport net.minecraft.client.gui.Click;\nimport net.minecraft.client.input.KeyInput;')
     source = source.replace('String category="category.musicisland";', 'KeyBinding.Category category=KeyBinding.Category.create(Identifier.of("musicisland","controls"));')
     source = source.replace('String constant,String category)', 'String constant,KeyBinding.Category category)')
@@ -96,6 +102,7 @@ if minor < 20:
     if minor < 16:
         source=source.replace('net.minecraft.client.option.KeyBinding','net.minecraft.client.options.KeyBinding').replace('mc.setScreen(s)','mc.openScreen(s)').replace('pixels.setColor(', 'pixels.setPixelRgba(')
         source=source.replace('shouldPause()', 'isPauseScreen()').replace('close()', 'onClose()').replace('textRenderer,','font,')
+        if minor == 14:source=source.replace('.getWindow()', '.window')
         source=re.sub(r'new net.minecraft.text.LiteralText\((.*?)\)(?=,b->)',lambda m:m[1],source)
     helper = Path('templates/LegacyDrawContext.java').read_text(encoding='utf-8')
     if minor < 17:

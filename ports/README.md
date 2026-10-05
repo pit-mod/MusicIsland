@@ -21,7 +21,7 @@ To build all release jars from the repository root:
 ./ports/build-all.ps1 -Jdk8 C:/Java/jdk8 -Jdk21 C:/Java/jdk21 -Jdk25 C:/Java/jdk25
 ```
 
-Jars are collected in `build/releases/1.1.0`. Each pre-26 jar intentionally declares only the versions it was built for. Minecraft's rendering, mapping and input APIs change between families; widening metadata alone does not make a binary compatible.
+Jars are collected in `build/releases/1.1.1`. Fabric builds use version 1.1.1; the existing Forge builds remain at 1.1.0. Each pre-26 jar intentionally declares only the versions it was built for. Minecraft's rendering, mapping and input APIs change between families; widening metadata alone does not make a binary compatible.
 
 ## Shared code and checks
 
