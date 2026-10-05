@@ -1,6 +1,6 @@
 # Source for each Minecraft version
 
-Every supported version is built from this repository. The source is public under the [MIT license](LICENSE). Adapters share the media bridge and animation code; separate repositories or branches for every Minecraft release are not required.
+Every supported version is built from this public repository. Adapters share the media bridge and animation code; separate repositories or branches for every Minecraft release are not required.
 
 ## Download
 
