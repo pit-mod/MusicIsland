@@ -11,7 +11,7 @@ A standalone music HUD for Minecraft, with Forge builds for older versions and F
 3. For Fabric, install Fabric Loader **0.19.5 or newer** and the Fabric API release matching Minecraft. Forge 1.8.9 and 1.12.2 bundle the official OneConfig bootstrap; allow internet access on their first launch.
 4. Play music in an app or browser that exposes a Windows media session.
 
-No Nezur key or installed .NET runtime is needed. This mod only contains MusicIsland, its rendering utilities, settings and its Windows media bridge.
+This mod only contains MusicIsland, its rendering utilities, settings and its Windows media bridge.
 
 ## Supported releases
 
