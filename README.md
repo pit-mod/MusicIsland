@@ -39,6 +39,8 @@ The panel expands only when requested. Track changes animate its artwork and tit
 
 ## Build from source
 
+All supported versions' source is in this repository. Download the complete **Source code (zip)** from a release, or clone the repository. See the [source map and build command for every version](SOURCE_MAP.md); the adapters reuse shared files, so downloading just one `ports/` subfolder is insufficient.
+
 Use **JDK 8** for Gradle, a **.NET SDK supporting .NET 8 Native AOT**, and **Visual Studio C++ build tools with a Windows SDK**. On Windows:
 
 ```powershell

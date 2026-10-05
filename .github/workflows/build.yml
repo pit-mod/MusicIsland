@@ -28,19 +28,28 @@ jobs:
           - { directory: 'ports/fabric', wrapper: './gradlew.bat', java: '21', mc: '1.21.11' }
           - { directory: 'ports/fabric-26', wrapper: './gradlew.bat', java: '25', mc: '26.1.2' }
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
         with: { distribution: temurin, java-version: '${{ matrix.java }}' }
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         with: { dotnet-version: '8.0.x' }
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with: { python-version: '3.x' }
       - name: Build release jar
         working-directory: ${{ matrix.directory }}
         shell: pwsh
         run: |
-          & '${{ matrix.wrapper }}' '-Pmc=${{ matrix.mc }}' build --console=plain
-          if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}
+          $musicLog=Join-Path $env:RUNNER_TEMP 'musicisland-build.log'
+          for($musicAttempt=1;$musicAttempt -le 3;$musicAttempt++) {
+            & '${{ matrix.wrapper }}' '-Pmc=${{ matrix.mc }}' '-Dorg.gradle.internal.http.connectionTimeout=60000' '-Dorg.gradle.internal.http.socketTimeout=120000' build --console=plain 2>&1 | Tee-Object -FilePath $musicLog
+            $musicExit=$LASTEXITCODE
+            if($musicExit -eq 0){break}
+            $musicOutput=Get-Content -LiteralPath $musicLog -Raw
+            $musicNetworkFailure=$musicOutput -match 'Read timed out|Connect timed out|Connection timed out|Connection reset|Remote host terminated the handshake|status code (429|502|503|504)'
+            if(-not $musicNetworkFailure -or $musicAttempt -eq 3){exit $musicExit}
+            Write-Host "Dependency download failed; retrying build (attempt $($musicAttempt+1) of 3)."
+            Start-Sleep -Seconds (5*$musicAttempt)
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: MusicIsland-${{ matrix.mc }}
@@ -50,8 +59,8 @@ jobs:
   presentation:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
         with: { distribution: temurin, java-version: '21' }
       - name: Shared presentation checks
         shell: pwsh
