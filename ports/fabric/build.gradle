@@ -1,0 +1,59 @@
+plugins { id 'fabric-loom' version '1.14.10' }
+version = '1.1.0'
+group = 'io.github.pitmod'
+def mc = project.findProperty('mc') ?: '1.20.1'
+def target = new groovy.json.JsonSlurper().parse(file('targets.json'))[mc]
+if(target == null)throw new GradleException("Unsupported Fabric target: $mc")
+base.archivesName = "MusicIsland-fabric-$mc"
+layout.buildDirectory = file("build/$mc")
+def original = file('../..')
+def sharedNames = ['ArtworkAccent','MediaSnapshot','MusicAudio','MusicWaveform','MusicControlMotion','MusicGesture','MusicLayout','MusicMarquee','MusicPlayGlyph','MusicPresentation','MusicPreview','WindowsMusicProvider']
+repositories { mavenCentral() }
+loom { mixin { useLegacyMixinAp = true; defaultRefmapName = 'musicisland.refmap.json' } }
+dependencies {
+    minecraft "com.mojang:minecraft:$mc"
+    mappings "net.fabricmc:yarn:${target.yarn}:v2"
+    modImplementation 'net.fabricmc:fabric-loader:0.19.5'
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${target.api}"
+}
+java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.release = target.java as int }
+tasks.register('prepareAdapterSource', Exec) {
+    inputs.files(fileTree('src/main/java'),fileTree('templates'),file('generate-adapter.py'))
+    inputs.property 'minecraftVersion', mc
+    outputs.dir layout.buildDirectory.dir('adapter/java')
+    outputs.dir layout.buildDirectory.dir('adapter/resources')
+    commandLine 'python', 'generate-adapter.py', mc, layout.buildDirectory.dir('adapter/java').get().asFile.absolutePath
+}
+tasks.register('prepareSharedSource', Sync) {
+    from(new File(original,'src/main/java')) {
+        sharedNames.each { include "**/${it}.java" }
+        include '**/PhysicsSpring.java'
+    }
+    into layout.buildDirectory.dir('shared/java')
+}
+sourceSets.main.java.srcDirs = [new File(original,'ports/common/src/main/java'), layout.buildDirectory.dir('shared/java'),layout.buildDirectory.dir('adapter/java')]
+sourceSets.main.resources.srcDir layout.buildDirectory.dir('adapter/resources')
+tasks.compileJava.dependsOn 'prepareSharedSource','prepareAdapterSource'
+tasks.register('buildMusicIslandHelper', Exec) {
+    workingDir original
+    inputs.files(fileTree(new File(original,'music-island-helper')) { include '*.cs','*.csproj' })
+    outputs.file new File(original,'build/music-island-helper/MusicSessionBridge.exe')
+    commandLine 'dotnet','publish','music-island-helper/MusicSessionBridge.csproj','-c','Release','-r','win-x64','-o','build/music-island-helper'
+}
+processResources {
+    dependsOn 'buildMusicIslandHelper','prepareAdapterSource'
+    inputs.properties version:project.version,mc:mc,java:target.java,apiId:target.apiId
+    filesMatching('fabric.mod.json') {
+        expand version: project.version, mc:mc, java:target.java
+        filter { String line -> line.replace('"mixins": []', '"mixins": '+((mc.split('\\.')[1] as int)<17?'["musicisland.mixins.json"]':'[]')) }
+        filter { String line -> line.replace('"fabric-api":', '"'+target.apiId+'":') }
+    }
+    from(new File(original,'src/main/resources/assets/musicisland/logo.png')) { into 'assets/musicisland' }
+    from(new File(original,'build/music-island-helper/MusicSessionBridge.exe')) { into 'assets/musicisland/music' }
+    from(new File(original,'licenses')) { into 'META-INF/licenses' }
+    from(new File(original,'THIRD_PARTY_NOTICES.md')) { into 'META-INF' }
+    from(new File(original,'ports/fabric-26/src/main/resources/assets/musicisland/lang')) { into 'assets/musicisland/lang' }
+}
+jar { from(new File(original,'LICENSE')) { rename { 'LICENSE_MusicIsland' } } }
+apply from: '../smoke.gradle'

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>MusicIsland — color logo</title>
+  <defs>
+    <linearGradient id="paper" x2="1" y2="1"><stop stop-color="#D5CFFB"/><stop offset="1" stop-color="#A99CEB"/></linearGradient>
+    <linearGradient id="cover" x2=".2" y2="1"><stop stop-color="#5A3A8C"/><stop offset=".55" stop-color="#C784B5"/><stop offset="1" stop-color="#F5BC9D"/></linearGradient>
+    <clipPath id="coverClip"><rect x="150" y="360" width="304" height="304" rx="66"/></clipPath>
+    <filter id="shadow" x="-25%" y="-50%" width="150%" height="210%"><feGaussianBlur stdDeviation="18"/></filter>
+  </defs>
+  <rect id="background" width="1024" height="1024" fill="url(#paper)"/>
+  <circle cx="962" cy="58" r="296" fill="#F8E9EE" opacity=".18"/>
+  <circle cx="82" cy="1000" r="238" fill="none" stroke="#F5F0FF" stroke-width="2" opacity=".24"/>
+  <g transform="rotate(-12 512 512)">
+    <rect x="80" y="332" width="864" height="440" rx="220" fill="#312154" opacity=".22" filter="url(#shadow)"/>
+    <rect id="island" x="80" y="292" width="864" height="440" rx="220" fill="#10121D"/>
+    <rect x="82" y="294" width="860" height="436" rx="218" fill="none" stroke="#FFFFFF" stroke-opacity=".12" stroke-width="3"/>
+    <g id="album-cover" clip-path="url(#coverClip)">
+      <rect x="150" y="360" width="304" height="304" fill="url(#cover)"/>
+      <circle cx="340" cy="452" r="68" fill="#FFD8BA"/>
+      <path d="M150 600L260 472L378 614L454 528V664H150Z" fill="#684A8F"/>
+      <path d="M150 634L286 562L454 646V664H150Z" fill="#342C59"/>
+      <path d="M150 655Q276 598 454 660V664H150Z" fill="#211D3B"/>
+      <circle cx="206" cy="416" r="5" fill="#F8DFEC"/>
+      <circle cx="243" cy="390" r="3" fill="#F8DFEC"/>
+    </g>
+    <g id="waveform" stroke-width="36" stroke-linecap="round">
+      <path d="M530 476v72" stroke="#B8A8EE"/>
+      <path d="M592 432v160" stroke="#D5A8E2"/>
+      <path d="M654 390v244" stroke="#F1B0D0"/>
+      <path d="M716 422v180" stroke="#F7BDCD"/>
+      <path d="M778 452v120" stroke="#FFD2BF"/>
+      <path d="M840 480v64" stroke="#FBE4D0"/>
+    </g>
+  </g>
+</svg>

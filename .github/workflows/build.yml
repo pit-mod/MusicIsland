@@ -1,0 +1,59 @@
+name: Build supported Minecraft families
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { directory: '.', wrapper: './gradlew.bat', java: '8', mc: '1.8.9' }
+          - { directory: 'ports/forge-legacy', wrapper: '../../gradlew.bat', java: '8', mc: '1.9.4' }
+          - { directory: 'ports/forge-legacy', wrapper: '../../gradlew.bat', java: '8', mc: '1.10.2' }
+          - { directory: 'ports/forge-legacy', wrapper: '../../gradlew.bat', java: '8', mc: '1.11.2' }
+          - { directory: 'ports/forge-1.12.2', wrapper: '../../gradlew.bat', java: '8', mc: '1.12.2' }
+          - { directory: 'ports/forge-1.13.2', wrapper: './gradlew.bat', java: '8', mc: '1.13.2' }
+          - { directory: 'ports/fabric', wrapper: './gradlew.bat', java: '21', mc: '1.14.4' }
+          - { directory: 'ports/fabric', wrapper: './gradlew.bat', java: '21', mc: '1.15.2' }
+          - { directory: 'ports/fabric', wrapper: './gradlew.bat', java: '21', mc: '1.16.5' }
+          - { directory: 'ports/fabric', wrapper: './gradlew.bat', java: '21', mc: '1.17.1' }
+          - { directory: 'ports/fabric', wrapper: './gradlew.bat', java: '21', mc: '1.18.2' }
+          - { directory: 'ports/fabric', wrapper: './gradlew.bat', java: '21', mc: '1.19.4' }
+          - { directory: 'ports/fabric', wrapper: './gradlew.bat', java: '21', mc: '1.20.1' }
+          - { directory: 'ports/fabric', wrapper: './gradlew.bat', java: '21', mc: '1.20.6' }
+          - { directory: 'ports/fabric', wrapper: './gradlew.bat', java: '21', mc: '1.21.1' }
+          - { directory: 'ports/fabric', wrapper: './gradlew.bat', java: '21', mc: '1.21.11' }
+          - { directory: 'ports/fabric-26', wrapper: './gradlew.bat', java: '25', mc: '26.1.2' }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '${{ matrix.java }}' }
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '8.0.x' }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.x' }
+      - name: Build release jar
+        working-directory: ${{ matrix.directory }}
+        shell: pwsh
+        run: |
+          & '${{ matrix.wrapper }}' '-Pmc=${{ matrix.mc }}' build --console=plain
+          if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MusicIsland-${{ matrix.mc }}
+          path: |
+            ${{ matrix.directory }}/build/libs/*.jar
+            ${{ matrix.directory }}/build/${{ matrix.mc }}/libs/*.jar
+  presentation:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - name: Shared presentation checks
+        shell: pwsh
+        working-directory: ports/common
+        run: ../fabric/gradlew.bat check --console=plain

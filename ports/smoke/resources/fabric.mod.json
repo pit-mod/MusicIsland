@@ -1,0 +1,1 @@
+{"schemaVersion":1,"id":"musicisland_smoke","version":"1","environment":"client","entrypoints":{"client":["io.github.pitmod.musicisland.smoke.StartupChecks"]},"depends":{"musicisland":"*"}}

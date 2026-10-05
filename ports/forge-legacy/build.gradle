@@ -1,0 +1,73 @@
+buildscript {
+    repositories { mavenCentral(); maven { url 'https://maven.minecraftforge.net' } }
+    def mc = project.findProperty('mc') ?: '1.11.2'
+    dependencies { classpath "net.minecraftforge.gradle:ForgeGradle:${mc.startsWith('1.12')?'2.3':'2.2'}-SNAPSHOT" }
+}
+apply plugin: 'net.minecraftforge.gradle.forge'
+def mc = project.findProperty('mc') ?: '1.11.2'
+def targets = [
+    '1.9':['12.16.1.1938-1.9','stable_24'],
+    '1.9.4':['12.17.0.2317-1.9.4','stable_26'],
+    '1.10':['12.18.0.2000-1.10.0','stable_26'],
+    '1.10.2':['12.18.3.2511','stable_29'],
+    '1.11':['13.19.1.2199','stable_32'],
+    '1.11.2':['13.20.1.2588','stable_32'],
+    '1.12':['14.21.1.2443','stable_39'],
+    '1.12.1':['14.22.1.2485','stable_39']
+]
+if(!targets.containsKey(mc))throw new GradleException("Unsupported legacy Forge target: $mc")
+version = '1.1.0'
+group = 'io.github.pitmod'
+archivesBaseName = "MusicIsland-forge-$mc"
+buildDir = "build/$mc"
+sourceCompatibility = targetCompatibility = '1.8'
+compileJava.options.encoding = 'UTF-8'
+minecraft { version = "$mc-${targets[mc][0]}"; mappings = targets[mc][1]; runDir = "run/$mc" }
+repositories { mavenCentral() }
+def original = file('../..')
+def modernCommands = mc.startsWith('1.12') || mc.startsWith('1.11') || mc.startsWith('1.10') || mc.startsWith('1.9')
+task prepareCompatibilitySource(type: Sync) {
+    inputs.property 'adapterRevision', 5
+    inputs.property 'minecraftVersion', mc
+    from(new File(original,'src/main/java')) { exclude '**/MusicIslandConfig.java','**/MusicIslandGuiFactory.java' }
+    from('src/main/java')
+    from(new File(original,'ports/common/src/main/java')) { include '**/PortableSettings.java','**/SettingsRows.java' }
+    into "$buildDir/compatibility/java"
+    filter { String line ->
+        def result = line.replace('cc.polyfrost.oneconfig.gui.OneConfigGui.isOpen()','false')
+            .replace('version="1.0.1"','version="1.1.0"')
+            .replace('acceptedMinecraftVersions="[1.8.9]"',"acceptedMinecraftVersions=\"[$mc]\"")
+        if(!mc.startsWith('1.9'))result=result.replace('getCommandName()','getName()').replace('getCommandUsage(ICommandSender sender)','getUsage(ICommandSender sender)')
+        if(modernCommands)result=result.replace('processCommand(ICommandSender sender,String[] args)','execute(net.minecraft.server.MinecraftServer server,ICommandSender sender,String[] args)')
+        if(!mc.startsWith('1.9'))result=result.replace('.theWorld','.world').replace('.thePlayer','.player')
+        result=result.replace('e.type','e.getType()').replace('e.gui','e.getGui()')
+        if(mc.startsWith('1.11')||mc.startsWith('1.12')) result=result.replace('fontRendererObj','fontRenderer')
+        result
+    }
+    // IModGuiFactory removed its deprecated nested runtime handler in 1.12.
+    if(mc.startsWith('1.11')||mc.startsWith('1.12')) doLast {
+        def factory=file("$buildDir/compatibility/java/io/github/pitmod/musicisland/MusicIslandGuiFactory.java")
+        factory.text=factory.text.replace('@Override public Class<? extends GuiScreen> mainConfigGuiClass(){return ConfigScreen.class;}',(mc.startsWith('1.11')?'@Override public Class<? extends GuiScreen> mainConfigGuiClass(){return ConfigScreen.class;}\n    ':'')+'@Override public boolean hasConfigGui(){return true;}\n    @Override public GuiScreen createConfigGui(GuiScreen parent){return new ConfigScreen(parent);}')
+        if(mc.startsWith('1.12'))factory.text=factory.text.replace('@Override public RuntimeOptionGuiHandler getHandlerFor(RuntimeOptionCategoryElement element){return null;}','')
+    }
+}
+sourceSets.main.java.srcDirs = ["$buildDir/compatibility/java"]
+sourceMainJava.dependsOn prepareCompatibilitySource
+task buildMusicIslandHelper(type: Exec) {
+    workingDir original
+    inputs.files(fileTree(new File(original,'music-island-helper')) { include '*.cs','*.csproj' })
+    outputs.file new File(original,'build/music-island-helper/MusicSessionBridge.exe')
+    commandLine 'dotnet','publish','music-island-helper/MusicSessionBridge.csproj','-c','Release','-r','win-x64','-o','build/music-island-helper'
+}
+processResources {
+    dependsOn buildMusicIslandHelper
+    from(new File(original,'src/main/resources')) {
+        include 'mcmod.info'; expand version: project.version
+        filter { String line -> line.replace('"mcversion": "1.8.9"',"\"mcversion\": \"$mc\"").replace(' and OneConfig settings',' and playback controls') }
+    }
+    from(new File(original,'src/main/resources')) { exclude 'mcmod.info' }
+    from(new File(original,'build/music-island-helper')) { include 'MusicSessionBridge.exe'; into 'assets/musicisland/music' }
+    from(new File(original,'licenses')) { into 'META-INF/licenses' }
+    from(new File(original,'THIRD_PARTY_NOTICES.md')) { into 'META-INF' }
+}
+jar { manifest.attributes('ModSide':'CLIENT','ForceLoadAsMod':'true') }

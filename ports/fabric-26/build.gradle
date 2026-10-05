@@ -1,0 +1,39 @@
+plugins { id 'net.fabricmc.fabric-loom' version '1.15.5' }
+version = '1.1.0'
+group = 'io.github.pitmod'
+base.archivesName = 'MusicIsland-fabric-26.1-26.3'
+def original = file('../..')
+def sharedNames = ['ArtworkAccent','MediaSnapshot','MusicAudio','MusicWaveform','MusicControlMotion','MusicGesture','MusicLayout','MusicMarquee','MusicPlayGlyph','MusicPresentation','MusicPreview','WindowsMusicProvider']
+repositories { mavenCentral() }
+dependencies {
+    minecraft "com.mojang:minecraft:${project.findProperty('mc') ?: '26.1.2'}"
+    implementation 'net.fabricmc:fabric-loader:0.19.5'
+    implementation "net.fabricmc.fabric-api:fabric-api:${['26.1':'0.145.1+26.1','26.1.1':'0.145.4+26.1.1','26.1.2':'0.155.3+26.1.2','26.2':'0.161.0+26.2','26.3':'0.161.0+26.3'][project.findProperty('mc') ?: '26.1.2']}"
+}
+java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.release = 25 }
+tasks.register('prepareSharedSource', Sync) {
+    from(new File(original,'src/main/java')) {
+        sharedNames.each { include "**/${it}.java" }
+        include '**/PhysicsSpring.java'
+    }
+    into layout.buildDirectory.dir('shared/java')
+}
+sourceSets.main.java.srcDirs += [new File(original,'ports/common/src/main/java'), layout.buildDirectory.dir('shared/java')]
+tasks.compileJava.dependsOn 'prepareSharedSource'
+tasks.register('buildMusicIslandHelper', Exec) {
+    workingDir original
+    inputs.files(fileTree(new File(original,'music-island-helper')) { include '*.cs','*.csproj' })
+    outputs.file new File(original,'build/music-island-helper/MusicSessionBridge.exe')
+    commandLine 'dotnet','publish','music-island-helper/MusicSessionBridge.csproj','-c','Release','-r','win-x64','-o','build/music-island-helper'
+}
+processResources {
+    dependsOn 'buildMusicIslandHelper'
+    filesMatching('fabric.mod.json') { expand version: project.version }
+    from(new File(original,'src/main/resources/assets/musicisland/logo.png')) { into 'assets/musicisland' }
+    from(new File(original,'build/music-island-helper/MusicSessionBridge.exe')) { into 'assets/musicisland/music' }
+    from(new File(original,'licenses')) { into 'META-INF/licenses' }
+    from(new File(original,'THIRD_PARTY_NOTICES.md')) { into 'META-INF' }
+}
+jar { from(new File(original,'LICENSE')) { rename { 'LICENSE_MusicIsland' } } }
+apply from: '../smoke.gradle'

@@ -1,0 +1,10 @@
+{
+  "key.category.musicisland.controls": "MusicIsland",
+  "category.musicisland": "MusicIsland",
+  "key.musicisland.controls": "Open playback controls",
+  "key.musicisland.settings": "Open settings",
+  "key.musicisland.expand": "Expand / collapse island",
+  "key.musicisland.play_pause": "Play / pause",
+  "key.musicisland.previous": "Previous track",
+  "key.musicisland.next": "Next track"
+}

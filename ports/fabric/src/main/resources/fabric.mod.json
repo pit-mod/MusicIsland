@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "musicisland",
+  "version": "${version}",
+  "name": "MusicIsland",
+  "description": "Animated music HUD with album artwork, measured audio visualization and playback controls.",
+  "authors": ["pit-mod"],
+  "contact": { "sources": "https://github.com/pit-mod/MusicIsland" },
+  "license": "MIT",
+  "icon": "assets/musicisland/logo.png",
+  "environment": "client",
+  "mixins": [],
+  "entrypoints": { "client": ["io.github.pitmod.musicisland.fabric.MusicIslandClient"] },
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "fabric-api": "*",
+    "minecraft": "${mc}",
+    "java": ">=${java}"
+  }
+}

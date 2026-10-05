@@ -10,3 +10,8 @@ obj/
 *.iml
 *.log
 local.properties
+**/.gradle/
+**/build/
+**/run/
+branding/validation-deps/
+ports/.tools/

@@ -45,7 +45,7 @@ public final class MusicIslandConfig extends Config {
     public transient Runnable resetDefaults=this::resetDefaults;
 
     public MusicIslandConfig(){
-        super(new Mod("MusicIsland",ModType.HUD),"musicisland.json",true);
+        super(new Mod("MusicIsland",ModType.HUD,"/assets/musicisland/logo.png"),"musicisland.json",true);
         initialize();
         registerKeyBind(interact,()->{if(Minecraft.getMinecraft().currentScreen==null&&MusicIslandMod.island!=null)MusicIslandMod.island.open();});
     }

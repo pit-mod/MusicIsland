@@ -1,0 +1,28 @@
+// Isolated test-only mod; none of this source or metadata enters the release jar.
+sourceSets {
+    smoke {
+        java.srcDir '../smoke/java'
+        resources.srcDir '../smoke/resources'
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+}
+if(project.findProperty('mc')?.startsWith('1.') && (project.property('mc').split('\\.')[1] as int)<=16) {
+    tasks.withType(JavaExec).configureEach {
+        if(name=='runSmokeClient')javaLauncher=javaToolchains.launcherFor { languageVersion=JavaLanguageVersion.of(8) }
+    }
+}
+loom {
+    mods {
+        musicisland { sourceSet sourceSets.main }
+        musicisland_smoke { sourceSet sourceSets.smoke }
+    }
+    runs {
+        smokeClient {
+            client()
+            source sourceSets.smoke
+            runDir "build/smoke-run-${project.findProperty('mc') ?: 'default'}"
+            vmArg '-Djava.awt.headless=true'
+        }
+    }
+}

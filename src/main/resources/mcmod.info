@@ -6,6 +6,7 @@
     "version": "${version}",
     "mcversion": "1.8.9",
     "url": "https://github.com/pit-mod/MusicIsland",
+    "logoFile": "assets/musicisland/logo.png",
     "authorList": ["pit-mod"],
     "clientSideOnly": true
   }

@@ -1,0 +1,17 @@
+modLoader="javafml"
+loaderVersion="[25,)"
+license="MIT"
+[[mods]]
+modId="musicisland"
+version="1.1.0"
+displayName="MusicIsland"
+displayURL="https://github.com/pit-mod/MusicIsland"
+logoFile="assets/musicisland/logo.png"
+authors="pit-mod"
+description='''An animated music HUD with artwork, playback controls and a Windows audio visualizer.'''
+[[dependencies.musicisland]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.13.2]"
+ordering="NONE"
+side="CLIENT"

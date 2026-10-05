@@ -1,0 +1,34 @@
+buildscript {
+    repositories { maven { url = 'https://maven.minecraftforge.net/' }; mavenCentral() }
+    dependencies { classpath 'net.minecraftforge.gradle:ForgeGradle:3.0.197' }
+}
+apply plugin: 'net.minecraftforge.gradle'
+version = '1.1.0'
+group = 'io.github.pitmod'
+archivesBaseName = 'MusicIsland-forge-1.13.2'
+sourceCompatibility = targetCompatibility = '1.8'
+compileJava.options.encoding = 'UTF-8'
+def original = file('../..')
+minecraft { mappings channel: 'snapshot', version: '20180921-1.13' }
+dependencies { minecraft 'net.minecraftforge:forge:1.13.2-25.0.223' }
+def sharedNames = ['ArtworkAccent','MediaSnapshot','MusicAudio','MusicWaveform','MusicControlMotion','MusicGesture','MusicLayout','MusicMarquee','MusicPlayGlyph','MusicPresentation','MusicPreview','WindowsMusicProvider']
+task prepareSharedSource(type: Sync) {
+    from(new File(original,'src/main/java')) { sharedNames.each { include "**/${it}.java" }; include '**/PhysicsSpring.java' }
+    into "$buildDir/shared/java"
+}
+sourceSets.main.java.srcDirs += [new File(original,'ports/common/src/main/java'),"$buildDir/shared/java"]
+compileJava.dependsOn prepareSharedSource
+task buildMusicIslandHelper(type: Exec) {
+    workingDir original
+    inputs.files(fileTree(new File(original,'music-island-helper')) { include '*.cs','*.csproj' })
+    outputs.file new File(original,'build/music-island-helper/MusicSessionBridge.exe')
+    commandLine 'dotnet','publish','music-island-helper/MusicSessionBridge.csproj','-c','Release','-r','win-x64','-o','build/music-island-helper'
+}
+processResources {
+    dependsOn buildMusicIslandHelper
+    from(new File(original,'src/main/resources/assets/musicisland/logo.png')) { into 'assets/musicisland' }
+    from(new File(original,'build/music-island-helper/MusicSessionBridge.exe')) { into 'assets/musicisland/music' }
+    from(new File(original,'licenses')) { into 'META-INF/licenses' }
+    from(new File(original,'THIRD_PARTY_NOTICES.md')) { into 'META-INF' }
+}
+jar.finalizedBy('reobfJar')

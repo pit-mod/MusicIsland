@@ -1,0 +1,23 @@
+plugins { id 'java' }
+repositories { mavenCentral() }
+dependencies { implementation 'com.google.code.gson:gson:2.8.9' }
+java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
+tasks.withType(JavaCompile).configureEach { options.release=8; options.encoding='UTF-8' }
+def original = file('../..')
+def names=['ArtworkAccent','MediaSnapshot','MusicAudio','MusicWaveform','MusicControlMotion','MusicGesture','MusicLayout','MusicMarquee','MusicPlayGlyph','MusicPresentation','MusicPreview','WindowsMusicProvider']
+tasks.register('prepareSharedSource',Sync){
+    from(new File(original,'src/main/java')){names.each{include "**/${it}.java"};include '**/PhysicsSpring.java'}
+    into layout.buildDirectory.dir('shared/java')
+}
+sourceSets.main.java.srcDir layout.buildDirectory.dir('shared/java')
+tasks.compileJava.dependsOn 'prepareSharedSource'
+tasks.register('verifyPresentation',JavaExec){
+    dependsOn 'testClasses'
+    classpath=sourceSets.test.runtimeClasspath
+    mainClass='io.github.pitmod.musicisland.portable.CompatibilityChecks'
+    systemProperty 'java.awt.headless','true'
+    args layout.buildDirectory.dir('verification').get().asFile.absolutePath
+}
+tasks.check.dependsOn 'verifyPresentation'
+// The focused compatibility checks are an executable harness, not JUnit tests.
+tasks.test.enabled=false
