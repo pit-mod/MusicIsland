@@ -35,7 +35,10 @@ internal sealed unsafe class AudioCom : IDisposable
     }
     internal AudioCom SessionManager()
     {
-        Guid iid = new("77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F");
+        return Activate(new Guid("77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F"));
+    }
+    internal AudioCom Activate(Guid iid)
+    {
         nint result = 0;
         Marshal.ThrowExceptionForHR(((delegate* unmanaged[Stdcall]<nint, Guid*, uint, nint, nint*, int>)Slot(3))(Pointer, &iid, 23, 0, &result));
         return new AudioCom(result);
@@ -64,6 +67,20 @@ internal sealed unsafe class AudioCom : IDisposable
     {
         int muted = 0;
         Marshal.ThrowExceptionForHR(((delegate* unmanaged[Stdcall]<nint, int*, int>)Slot(6))(Pointer, &muted));
+        return muted != 0;
+    }
+    internal float SessionVolume() => FloatValue(3);
+    internal float EndpointDecibels() => FloatValue(8);
+    private float FloatValue(int slot)
+    {
+        float value = 0;
+        Marshal.ThrowExceptionForHR(((delegate* unmanaged[Stdcall]<nint, float*, int>)Slot(slot))(Pointer, &value));
+        return value;
+    }
+    internal bool EndpointMuted()
+    {
+        int muted = 0;
+        Marshal.ThrowExceptionForHR(((delegate* unmanaged[Stdcall]<nint, int*, int>)Slot(15))(Pointer, &muted));
         return muted != 0;
     }
     public void Dispose()

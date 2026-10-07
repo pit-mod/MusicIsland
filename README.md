@@ -35,7 +35,7 @@ This targets the final stable release of each family rather than every historica
 - Adjust scale, top/horizontal position, compact title, visualizer, motion, source preference, auto-collapse and paused visibility in settings. Preview mode works without a media app.
 - The island appears only while a world and player are loaded by default. Enable **Appearance > Show in Minecraft menus** to allow it on the title screen, server browser and other menus outside a game. Settings remain accessible from the Forge Mods menu either way.
 
-The panel expands only when requested. Track changes animate its artwork and title without expanding it. Commands are validated against the displayed session and track before execution. Metadata, artwork, seek and transport availability depend on what the media app publishes to Windows. The visualizer reads audio peaks from matching application sessions; it does not record audio or use the microphone.
+The panel expands only when requested. Track changes animate its artwork and title without expanding it. Commands are validated against the displayed session and track before execution. Metadata, artwork, seek and transport availability depend on what the media app publishes to Windows. On Windows 11, the visualizer follows six bands of bass, mids and treble after the player's volume control, with stronger movement for quiet music. Windows 10 uses a basic peak meter. Audio is never recorded and the microphone is not used.
 
 ## Build from source
 

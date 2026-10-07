@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AssemblyName>AudioBridgeTests</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../music-island-helper/AudioSpectrum.cs" Link="AudioSpectrum.cs" />
+    <Compile Include="../../music-island-helper/ProcessLoopback.cs" Link="ProcessLoopback.cs" />
+    <Compile Include="../../music-island-helper/CoreAudioNative.cs" Link="CoreAudioNative.cs" />
+    <Compile Include="../../music-island-helper/AudioSourceIdentity.cs" Link="AudioSourceIdentity.cs" />
+    <Compile Include="../../music-island-helper/PlayerAudioMeter.cs" Link="PlayerAudioMeter.cs" />
+    <Compile Include="../../music-island-helper/BridgeProtocol.cs" Link="BridgeProtocol.cs" />
+  </ItemGroup>
+</Project>

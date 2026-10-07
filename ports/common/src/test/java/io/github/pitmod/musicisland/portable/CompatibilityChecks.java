@@ -8,6 +8,7 @@ import javax.imageio.ImageIO;
 public final class CompatibilityChecks {
     private static void require(boolean value,String message){if(!value)throw new AssertionError(message);}
     public static void main(String[] args)throws Exception{
+        AudioBandChecks.run();
         long now=1_000_000_000L;MediaSnapshot first=MusicPreview.fixed(now);
         MusicPresentation model=new MusicPresentation();
         for(int i=0;i<120;i++)model.update(first,now+i*16_666_667L,2,0,15,"Fluid",false,false,false);

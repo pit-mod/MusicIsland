@@ -54,7 +54,11 @@ public final class WindowsMusicProvider implements AutoCloseable {
     private void readAudio()throws Exception{
         JsonObject request=new JsonObject();request.addProperty("op","meter");JsonObject data=exchange(request).getAsJsonObject("data");
         boolean available=data.get("available").getAsBoolean();String source=data.get("source").getAsString();float peak=data.get("peak").getAsFloat();
-        synchronized(this){if(!closed)audio=audio.append(available,source,peak,System.nanoTime(),snapshot!=null&&snapshot.playing);}
+        boolean spectrum=data.has("spectrum")&&data.get("spectrum").getAsBoolean();float[] bands=null;
+        if(spectrum&&data.has("bands")&&data.get("bands").isJsonArray()){
+            JsonArray values=data.getAsJsonArray("bands");if(values.size()==6){bands=new float[6];for(int i=0;i<6;i++)bands[i]=values.get(i).getAsFloat();}
+        }
+        synchronized(this){if(!closed)audio=spectrum?MusicAudio.bands(available,source,bands,System.nanoTime(),snapshot!=null&&snapshot.playing):audio.append(available,source,peak,System.nanoTime(),snapshot!=null&&snapshot.playing);}
     }
     public synchronized boolean command(String op,MediaSnapshot target,double seconds){
         if(closed||target==null||commandPending)return false;

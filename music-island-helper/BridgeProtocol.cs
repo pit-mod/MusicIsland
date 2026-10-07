@@ -6,7 +6,7 @@ internal sealed record BridgeFailure(long id, bool ok, string error, string stag
 internal sealed record SessionSummary(string session, string source, string status);
 internal sealed record CommandResult(bool accepted, string reason);
 internal sealed record UnavailableData(bool available = false);
-internal sealed record MeterReading(bool available, float peak, string source);
+internal sealed record MeterReading(bool available, float peak, string source, float[]? bands = null, bool spectrum = false);
 internal sealed record PollData
 {
     public bool available { get; init; }

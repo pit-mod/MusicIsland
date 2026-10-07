@@ -1,39 +1,35 @@
 package io.github.pitmod.musicisland.music;
 
-/** Immutable history of real per-player peak samples. This is a waveform envelope, not an FFT. */
+/** Immutable real audio bands; older Windows bridges retain a peak-history fallback. */
 public final class MusicAudio {
     public static final MusicAudio SILENT=new MusicAudio(false,"",0,new float[9]);
     public final boolean available;
     public final String source;
     public final long receivedNanos;
     private final float[] peaks;
-    private final float[] history;
-    private final int count;
-    private final float mean,spread;
-    public MusicAudio(boolean available,String source,long now,float[] peaks){this(available,source,now,peaks,peaks,peaks.length);}
-    private MusicAudio(boolean available,String source,long now,float[] peaks,float[] history,int count){
-        this.available=available;this.source=source;this.receivedNanos=now;this.peaks=clean(peaks);this.history=clean(history);this.count=count;
-        float total=0;for(int i=this.history.length-count;i<this.history.length;i++)total+=this.history[i];
-        mean=count==0?0:total/count;
-        float[] sorted=java.util.Arrays.copyOfRange(this.history,this.history.length-count,this.history.length);java.util.Arrays.sort(sorted);
-        spread=count<2?.065f:Math.max(.065f,sorted[(count-1)*9/10]-sorted[(count-1)/10]);
+    private final boolean spectrum;
+    public MusicAudio(boolean available,String source,long now,float[] peaks){this(available,source,now,peaks,false);}
+    private MusicAudio(boolean available,String source,long now,float[] peaks,boolean spectrum){
+        this.available=available;this.source=source;this.receivedNanos=now;this.spectrum=spectrum;
+        this.peaks=new float[9];for(int i=0;i<Math.min(9,peaks.length);i++)this.peaks[i]=clean(peaks[i]);
     }
-    private static float[] clean(float[] values){float[] copy=values.clone();for(int i=0;i<copy.length;i++)copy[i]=Float.isFinite(copy[i])?Math.max(0,Math.min(1,copy[i])):0;return copy;}
-    public float level(int i,long now){return available&&now>=receivedNanos&&now-receivedNanos<350000000L&&Float.isFinite(peaks[i])?Math.max(0,Math.min(1,peaks[i])):0;}
-    /** Relative dynamics restore contrast in mastered music, without inventing a waveform. */
+    private static float clean(float value){return Float.isFinite(value)?Math.max(0,Math.min(1,value)):0;}
+    public float level(int i,long now){return available&&i>=0&&i<9&&now>=receivedNanos&&now-receivedNanos<350000000L?peaks[i]:0;}
     public float displayLevel(int i,long now){
-        float raw=level(i,now);if(raw<=.003f)return 0;
-        float audible=Math.max(0,Math.min(1,(raw-.003f)/.057f));
-        float relative=Math.max(0,Math.min(.95f,.38f+(raw-mean)/spread*.7f));
-        return audible*Math.max(0,Math.min(.95f,count<8?raw:raw*.4f+relative*.6f));
+        float raw=level(i,now);if(spectrum||raw<=0)return raw;
+        // Same fixed dBFS display curve as Windows; never normalize away volume.
+        float value=(float)Math.pow(Math.max(0,Math.min(1,(20*Math.log10(raw)+66)/66)),.85);
+        return value+.5f*value*(1-value)*(1-value);
+    }
+    /** Values have already been analyzed and mapped by the native bridge. */
+    public static MusicAudio bands(boolean available,String source,float[] bands,long now,boolean playing){
+        float[] values=new float[9];
+        if(available&&playing&&bands!=null&&bands.length==6)for(int i=0;i<6;i++)values[i+3]=clean(bands[i]);
+        return new MusicAudio(available,source,now,values,true);
     }
     public MusicAudio append(boolean available,String source,float peak,long now,boolean playing){
         float[] values=new float[9];
-        if(available&&playing){if(this.source.equals(source))System.arraycopy(peaks,1,values,0,8);values[8]=Float.isFinite(peak)?Math.max(0,Math.min(1,peak)):0;}
-        float[] samples=new float[32];int n=0;
-        if(available&&playing){if(this.source.equals(source)){
-            n=Math.min(31,count);System.arraycopy(history,history.length-n,samples,31-n,n);
-        }samples[31]=values[8];n++;}
-        return new MusicAudio(available,source,now,values,samples,n);
+        if(available&&playing){if(!spectrum&&this.source.equals(source))System.arraycopy(peaks,1,values,0,8);values[8]=clean(peak);}
+        return new MusicAudio(available,source,now,values,false);
     }
 }

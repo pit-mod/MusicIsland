@@ -12,9 +12,9 @@ public final class MusicWaveform {
         float dt=last<0?1f/60:Math.max(0,Math.min(.25f,(now-last)*1e-9f));last=now;
         boolean measured=playing&&selectedSource.equals(audio.source);
         for(int i=0;i<BARS;i++){
-            // Consecutive samples give the waveform a travelling lobe; there are no random oscillators.
-            float target=measured?Math.min(1,audio.displayLevel(i+3,now)*1.35f)*CONTOUR[i]:0;
-            levels[i]+=(target-levels[i])*(1-(float)Math.exp(-dt*(target>levels[i]?42:24)));
+            // The bridge places bass in the center and mids/treble on the edges.
+            float target=measured?audio.displayLevel(i+3,now)*CONTOUR[i]:0;
+            levels[i]+=(target-levels[i])*(1-(float)Math.exp(-dt*(target>levels[i]?52:28)));
             if(levels[i]<.0001f)levels[i]=0;
         }
     }
