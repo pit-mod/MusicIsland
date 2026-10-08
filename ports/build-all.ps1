@@ -24,11 +24,11 @@ try {
         Invoke-MusicBuild 'ports/fabric' $Jdk21 './gradlew.bat' @("-Pmc=$musicVersion",'build')
     }
     Invoke-MusicBuild 'ports/fabric-26' $Jdk25 './gradlew.bat' @('build')
-    $musicDestination=Join-Path $musicRoot 'build/releases/1.1.1'
+    $musicDestination=Join-Path $musicRoot 'build/releases/1.1.2'
     New-Item -ItemType Directory -Path $musicDestination -Force | Out-Null
-    Copy-Item -LiteralPath (Join-Path $musicRoot 'build/libs/MusicIsland-1.1.0.jar') -Destination (Join-Path $musicDestination 'MusicIsland-forge-1.8.9-1.1.0.jar')
+    Copy-Item -LiteralPath (Join-Path $musicRoot 'build/libs/MusicIsland-1.1.2.jar') -Destination (Join-Path $musicDestination 'MusicIsland-forge-1.8.9-1.1.2.jar')
     foreach($musicPattern in @('ports/forge-legacy/build/*/libs/*.jar','ports/forge-1.12.2/build/libs/*.jar','ports/forge-1.13.2/build/libs/*.jar','ports/fabric/build/*/libs/*.jar','ports/fabric-26/build/libs/*.jar')) {
-        Get-ChildItem -Path (Join-Path $musicRoot $musicPattern) | Where-Object { $_.Name -match '^MusicIsland-forge-.*-1\.1\.0\.jar$|^MusicIsland-fabric-.*-1\.1\.1\.jar$' } | Copy-Item -Destination $musicDestination
+        Get-ChildItem -Path (Join-Path $musicRoot $musicPattern) | Where-Object { $_.Name -match '^MusicIsland-(forge|fabric)-.*-1\.1\.2\.jar$' } | Copy-Item -Destination $musicDestination
     }
     Write-Host "Release jars: $musicDestination"
 } finally { $env:JAVA_HOME=$musicOldJava }

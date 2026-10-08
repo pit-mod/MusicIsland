@@ -16,7 +16,7 @@ def targets = [
     '1.12.1':['14.22.1.2485','stable_39']
 ]
 if(!targets.containsKey(mc))throw new GradleException("Unsupported legacy Forge target: $mc")
-version = '1.1.0'
+version = '1.1.2'
 group = 'io.github.pitmod'
 archivesBaseName = "MusicIsland-forge-$mc"
 buildDir = "build/$mc"
@@ -35,7 +35,6 @@ task prepareCompatibilitySource(type: Sync) {
     into "$buildDir/compatibility/java"
     filter { String line ->
         def result = line.replace('cc.polyfrost.oneconfig.gui.OneConfigGui.isOpen()','false')
-            .replace('version="1.0.1"','version="1.1.0"')
             .replace('acceptedMinecraftVersions="[1.8.9]"',"acceptedMinecraftVersions=\"[$mc]\"")
         if(!mc.startsWith('1.9'))result=result.replace('getCommandName()','getName()').replace('getCommandUsage(ICommandSender sender)','getUsage(ICommandSender sender)')
         if(modernCommands)result=result.replace('processCommand(ICommandSender sender,String[] args)','execute(net.minecraft.server.MinecraftServer server,ICommandSender sender,String[] args)')
@@ -60,6 +59,7 @@ task buildMusicIslandHelper(type: Exec) {
     commandLine 'dotnet','publish','music-island-helper/MusicSessionBridge.csproj','-c','Release','-r','win-x64','-o','build/music-island-helper'
 }
 processResources {
+    inputs.property 'modVersion', project.version
     dependsOn buildMusicIslandHelper
     from(new File(original,'src/main/resources')) {
         include 'mcmod.info'; expand version: project.version

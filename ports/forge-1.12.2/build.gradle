@@ -3,7 +3,7 @@ buildscript {
     dependencies { classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT' }
 }
 apply plugin: 'net.minecraftforge.gradle.forge'
-version = '1.1.0'
+version = '1.1.2'
 group = 'io.github.pitmod'
 archivesBaseName = 'MusicIsland-forge-1.12.2'
 sourceCompatibility = targetCompatibility = '1.8'
@@ -34,7 +34,6 @@ task prepareCompatibilitySource(type: Copy) {
             .replace('getCommandName()', 'getName()')
             .replace('getCommandUsage(ICommandSender sender)', 'getUsage(ICommandSender sender)')
             .replace('processCommand(ICommandSender sender,String[] args)', 'execute(net.minecraft.server.MinecraftServer server,ICommandSender sender,String[] args)')
-            .replace('version="1.0.1"', 'version="1.1.0"')
             .replace('acceptedMinecraftVersions="[1.8.9]"', 'acceptedMinecraftVersions="[1.12.2]"')
     }
 }
@@ -47,6 +46,7 @@ task buildMusicIslandHelper(type: Exec) {
     commandLine 'dotnet', 'publish', 'music-island-helper/MusicSessionBridge.csproj', '-c', 'Release', '-r', 'win-x64', '-o', 'build/music-island-helper'
 }
 processResources {
+    inputs.property 'modVersion', project.version
     dependsOn buildMusicIslandHelper
     from(new File(original, 'src/main/resources')) {
         include 'mcmod.info'

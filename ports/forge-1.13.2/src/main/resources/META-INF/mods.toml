@@ -3,7 +3,7 @@ loaderVersion="[25,)"
 license="MIT"
 [[mods]]
 modId="musicisland"
-version="1.1.0"
+version="1.1.2"
 displayName="MusicIsland"
 displayURL="https://github.com/pit-mod/MusicIsland"
 logoFile="assets/musicisland/logo.png"

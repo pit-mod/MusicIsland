@@ -8,7 +8,7 @@ import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 
-@Mod(modid="musicisland", name="MusicIsland", version="1.1.0", acceptedMinecraftVersions="[1.8.9]",
+@Mod(modid="musicisland", name="MusicIsland", version="1.1.2", acceptedMinecraftVersions="[1.8.9]",
         clientSideOnly=true, guiFactory="io.github.pitmod.musicisland.MusicIslandGuiFactory")
 public final class MusicIslandMod {
     public static MusicIslandConfig config;
